@@ -1,0 +1,284 @@
+---
+title: "univariate"
+author: "Julius Alipala"
+date: "January 31, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_data}
+library(ggplot2)
+library(gridExtra)
+trees = read.csv('~/quant_methods/data/treedata_subset.csv')
+str(trees)
+```
+
+```{r subsets}
+#subsets
+red_maple = trees[trees$species == "Acer rubrum",]
+str(red_maple)
+frasier_fir = trees[trees$species == "Abies fraseri",]
+str(frasier_fir)
+
+# red_maple - generalist
+# frasier_fir - specialist
+
+# more observations for generalist than specialist
+
+```
+
+
+
+```{r cover~disturb}
+par(mfrow=c(1,2))
+boxplot(cover ~ disturb, frasier_fir)
+title(main="Frasier fir")
+boxplot(cover ~ disturb, red_maple)
+title(main="red maple")
+
+# outlier for red maple (lt-sel)
+# more range in cover for red_maple
+# only one instance of frasier_fir for CORPLOG and SETTLE
+#
+# plot suggests that being in a virgin environment affects cover for frasier fir, but there are very
+# few observations of frasier fir in other environments
+#
+
+p1 = ggplot(data = frasier_fir,
+             mapping = aes(x = disturb, group = 1)) + 
+      geom_bar() + 
+      labs(x = 'Disturb', y = 'Frequency') + ggtitle('Frasier fir')
+
+p2 = ggplot(data = red_maple, 
+             mapping = aes(x = disturb, group = 1)) + 
+      geom_bar() + 
+      labs(x = 'Disturb', y = 'Frequency') + ggtitle('red maple')
+
+grid.arrange(p1, p2, nrow = 1)
+
+# majority of observations of frasier firs are found in virgin environments
+# frasier fir may be sensitive to disturbance; targeted for Christmas trees?
+# majority of observations of blue maples found in environments with light/selective logging
+
+```
+
+```{r cover~elev}
+par(mfrow=c(1,2))
+plot(cover ~ elev, frasier_fir, pch=1, col='blue')
+title("Frasier fir")
+lines(lowess(frasier_fir$elev, frasier_fir$cover), lt = 1, col='blue')
+plot(cover ~ elev, red_maple, pch=2, col='red')
+title("Red maple")
+#lines(lowess(red_maple$elev, red_maple$cover), lty=2, col='red')
+
+# elevation doesn't seem to effect cover for red maple
+# higher elevation correlates with more cover for frasier firs
+
+```
+
+```{r cover ~ streamdist}
+par(mfrow=c(1,2))
+plot(cover ~ streamdist, frasier_fir, pch=1, col='blue')
+title('Frasier fir')
+lines(lowess(frasier_fir$streamdist, frasier_fir$cover), lt = 1, col='blue')
+plot(cover ~ streamdist, red_maple, pch=2, col='red')
+title('Red maple')
+lines(lowess(red_maple$streamdist, red_maple$cover), lty=2, col='red')
+
+# stream distance may have an effect on cover for frasier fir
+# red maple seems to thrive more when closer to a stream
+# frasier fir have more observations between 200-600 meters from a stream
+
+
+```
+
+
+```{r cover ~ tci}
+par(mfrow=c(1,2))
+plot(cover ~ tci, frasier_fir, pch=1, col='blue')
+title('Frasier fir')
+lines(lowess(frasier_fir$tci, frasier_fir$cover), lt = 1, col='blue')
+plot(cover ~ tci, red_maple, pch=2, col='red')
+title('Red maple')
+lines(lowess(red_maple$tci, red_maple$cover), lty=2, col='red')
+
+# tci doesn't seem to have much effect on cover
+# more observations when tci is lower
+
+```
+
+
+```{r cover ~ beers}
+par(mfrow=c(1,2))
+plot(cover ~ beers, frasier_fir, pch=1, col='blue')
+title('Frasier fir')
+lines(lowess(frasier_fir$beers, frasier_fir$cover), lt = 1, col='blue')
+plot(cover ~ beers, red_maple, pch=2, col='red')
+title('Red maple')
+lines(lowess(red_maple$beers, red_maple$cover), lty=2, col='red')
+
+# may have correlation between cover and beers for frasier fir
+
+```
+
+
+```{r models}
+
+#null mod
+null_mod = lm(cover ~ 1, data = frasier_fir)
+null_mod
+
+# mean cover for frasier fir is 6.023
+
+par(mfrow=c(2,2))
+plot(cover ~ 1, data = frasier_fir)
+title("Frasier fir: null model")
+abline(null_mod, lwd = 2)
+abline(h = mean(frasier_fir$cover), col = 'red', lty = 2, lwd = 2)
+
+#main effect model: elev
+elev_mod = lm(cover ~ elev, data = frasier_fir)
+elev_mod
+plot(cover ~ elev, frasier_fir, pch=1, col='blue')
+title("Frasier fir: elev")
+abline(elev_mod)
+
+#streamdist
+sd_mod = lm(cover ~ streamdist, data = frasier_fir)
+sd_mod
+plot(cover ~ streamdist, frasier_fir, pch=1, col='blue')
+title("Frasier fir: streamdist")
+abline(sd_mod)
+
+#beers
+beers_mod = lm(cover ~ beers, data = frasier_fir)
+beers_mod
+plot(cover ~ beers, frasier_fir, pch=1, col='blue')
+title("Frasier fir: beers")
+abline(beers_mod)
+
+
+```
+
+```{r more modes}
+#null mod
+null_rm = lm(cover ~ 1, data = red_maple)
+null_rm
+
+par(mfrow=c(2,2))
+plot(cover ~ 1, data = red_maple)
+title("red_maple: null model")
+abline(null_rm, lwd = 2)
+abline(h = mean(red_maple$cover), col = 'red', lty = 2, lwd = 2)
+
+tci_rm = lm(cover ~ tci, data = red_maple)
+tci_rm
+plot(cover ~ tci, red_maple, pch=1, col='blue')
+title("red_maple: tci")
+abline(tci_rm)
+
+stream_rm = lm(cover ~ streamdist, data = red_maple)
+stream_rm
+plot(cover ~ streamdist, red_maple, pch=1, col='blue')
+title("red_maple: streamdist")
+abline(stream_rm)
+
+```
+
+
+
+```{r summary}
+#anova(elev_mod)
+#anova(sd_mod)
+#anova(beers_mod)
+
+#summary(elev_mod)
+#summary(sd_mod)
+#summary(beers_mod)
+
+#summary(tci_rm)
+#summary(stream_rm)
+
+
+
+```
+
+```{r more models}
+all_mod = lm(cover ~ elev + streamdist + beers, data=frasier_fir)
+#summary(all_mod) 
+
+int_mod = lm(cover ~ elev * streamdist * beers, data=frasier_fir)
+
+all_rm = lm(cover ~ elev + streamdist + beers, data=red_maple)
+int_rm = lm(cover ~ elev * streamdist * beers, data=red_maple)
+
+```
+
+```{r comparisons}
+AIC(null_mod)
+AIC(all_mod)
+AIC(elev_mod)
+AIC(beers_mod)
+AIC(sd_mod)
+AIC(int_mod)
+
+AIC(null_rm)
+AIC(stream_rm)
+AIC(tci_rm)
+AIC(all_rm)
+AIC(int_rm)
+
+```
+
+```{r int_rm}
+summary(int_rm)
+```
+
+How well does the exploratory model appear to explain cover?
+
+The cover~elev main effect model seems to be the best for frasier firs while the interaction effect model is the best for red maples. However, there doesn't seem to be a good model for the red maples. They do not differ very much from the null model.
+
+Which explanatory variables are the most important?
+For frasier firs, elev.
+
+
+Do model diagnostics indicate any problems with violations of OLS assumptions?
+No
+```{r diagnostic}
+plot(elev_mod)
+```
+
+Are you able to explain variance in one species better than another, why might this be the case?
+The adjusted r-squared indicates that elevation explains almost 50% of the variance in cover. The data for red maple varies too much for a good model to be developed. 
+
+```{r glm}
+pseudo_r2 = function(glm_mod) {
+                1 -  glm_mod$deviance / glm_mod$null.deviance
+}
+
+fras_poi = glm(cover ~ elev, data = frasier_fir, 
+           family='poisson')
+summary(fras_poi)
+summary(elev_mod)
+AIC(fras_poi)
+pseudo_r2(fras_poi)
+```
+
+```{r glm2}
+acer_poi = glm(cover ~ elev * streamdist * beers, data = red_maple, 
+           family='poisson')
+summary(acer_poi)
+summary(int_rm)
+AIC(acer_poi)
+pseudo_r2(acer_poi)
+```
+
+Compare your qualatitive assessment of which variables were most important in each model. Does it appear that changing the error distribution changed the results much? In what ways?
+This doesn't seem to change the results much and may be worse for red maple based on AIC.
+
+Provide a plain English summary (i.e., no statistics) of what you have found and what conclusions we can take away from your analysis?
+For frasier firs, elevation, stream distance, and beers seem to have an effect on coverage. Out of these three variables, elevation seems to have the most effect. Much more observations were made for the red maple, but I could not determine a clear correlation between cover and any other variables. The data seemed to be too evenly spread for a trend to be found.
+
