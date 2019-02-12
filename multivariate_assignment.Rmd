@@ -1,0 +1,99 @@
+---
+title: "multivariate_assignment"
+author: "Julius Alipala"
+date: "February 7, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+layout: page
+title: multivariate models
+---
+
+For this assignment will be analyzing data on the Vegetation
+and Environment in Dutch Dune Meadows.
+
+To import the data and read the metadata run the following:
+
+```{r}
+library(vegan)
+data(dune)
+data(dune.env)
+```
+
+1. Conduct an indirect ordination on the dune plant community. Specifically,
+visually examine a NMDS plot using the bray-curtis distance metric. Below is 
+some code to help you develop a potential plot that emphasizes the role of the
+environmental variable "Moisture". Describe how you interpret the
+graphic. What is the goal of creating such a plot? Does this analysis suggest
+any interesting findings with respect to the dune vegetation?
+
+
+```{r}
+dune_mds = metaMDS(dune)
+```
+
+```{r}
+plot(dune_mds, type='n')
+text(dune_mds, 'sp', cex=.5)
+# generate vector of colors 
+color_vect = rev(terrain.colors(6))[-1]
+points(dune_mds, 'sites', pch=19, 
+       col=color_vect[dune.env$Moisture])
+legend('topright', paste("Moisture =", 1:5, sep=''), 
+       col=color_vect, pch=19)
+
+```
+
+This plot shows that each site's position along the horizontal axis is dependent on it's moisture level. This indicates that moisture is a key factor in determining what species are found at a site. A species commonly found in a site with a certain moisture level has a good chance of appearing in another site with that same moisture level.
+
+2. Carry out a direct ordination using CCA in order to test any potential 
+hypotheses that you developed after examining the MDS plot. Specifically,
+carry out a test of the entire model (i.e., including all constrained axes)
+and also carry out tests at the scale of individual explanatory variables
+you included in your model if you included more than one variable. Plot your 
+results.
+
+```{r}
+dune_cca = cca(dune ~ ., data=dune.env)
+
+RsquareAdj(dune_cca, 100)
+anova(dune_cca, permutations=999)
+anova(dune_cca, by='margin', permutations=999)
+```
+
+```{r}
+plot(dune_cca, type='n', scaling=1)
+text(dune_cca, display='sp', cex=0.5, scaling=1, col='blue')
+points(dune_cca, 'sites', pch=19, 
+           col=color_vect[dune.env$Moisture])
+text(dune_cca, display='bp', col='red')
+```
+```{r}
+dune_cca_m = cca(dune ~ Moisture, data=dune.env)
+
+RsquareAdj(dune_cca_m, 100)
+anova(dune_cca_m, permutations=999)
+anova(dune_cca_m, by='margin', permutations=999)
+```
+
+```{r}
+plot(dune_cca_m, type='n', scaling=1)
+text(dune_cca_m, display='sp', cex=0.5, scaling=1, col='blue')
+points(dune_cca_m, 'sites', pch=19, 
+           col=color_vect[dune.env$Moisture])
+text(dune_cca_m, display='bp', col='red')
+```
+
+dune ~ Moisture is the better model according to adjusted R^2.
+
+
+3. Do your two analyses agree with one another or complement one another or do
+these two analyses seem to be suggesting different take home messages? Which
+analysis do you find to be more useful?
+
+The plot of dune ~ Moisture shows that Moisture.L explains most of the variance along the horizontal axis. This agrees with the observations made during the NMDS analysis. I find the CCA analysis to be more useful since it can easily test hypotheses made during earlier analysis. 
